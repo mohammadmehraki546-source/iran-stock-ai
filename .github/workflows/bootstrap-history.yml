@@ -1,0 +1,37 @@
+name: Bootstrap TSETMC history
+
+on:
+  schedule:
+    - cron: '0 1 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  bootstrap:
+    if: ${{ !hashFiles('.bootstrap_done') }}
+    runs-on: ubuntu-latest
+    timeout-minutes: 330
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - run: pip install pandas requests urllib3
+      - run: python scripts/bootstrap_history.py
+      - uses: actions/upload-artifact@v4
+        if: always()
+        with:
+          name: tsetmc-full-history
+          path: data/history/
+          retention-days: 90
+      - name: Mark bootstrap complete
+        if: success()
+        run: |
+          touch .bootstrap_done
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add .bootstrap_done
+          git commit -m "Mark TSETMC history bootstrap complete"
+          git push
