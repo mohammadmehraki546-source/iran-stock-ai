@@ -1,17 +1,25 @@
-name: Test TSETMC access
+name: TSETMC market snapshot
 
 on:
   schedule:
-    - cron: '*/5 * * * *'
+    - cron: '*/15 * * * *'
   workflow_dispatch:
 
+permissions:
+  contents: read
+
 jobs:
-  test:
+  collect:
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v4
       - uses: actions/setup-python@v5
         with:
           python-version: '3.12'
-      - run: pip install requests
-      - run: python scripts/test_tsetmc.py
+      - run: pip install pandas requests urllib3
+      - run: python scripts/collect_market_watch.py
+      - uses: actions/upload-artifact@v4
+        with:
+          name: tsetmc-market-snapshot
+          path: data/snapshots/
+          retention-days: 30
