@@ -2,7 +2,7 @@ name: TSETMC market snapshot
 
 on:
   schedule:
-    - cron: '*/15 * * * *'
+    - cron: '0 10 * * 0-3,6'
   workflow_dispatch:
 
 permissions:
