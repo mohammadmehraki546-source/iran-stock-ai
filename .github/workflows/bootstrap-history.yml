@@ -10,24 +10,43 @@ permissions:
 
 jobs:
   bootstrap:
-    if: ${{ !hashFiles('.bootstrap_done') }}
     runs-on: ubuntu-latest
     timeout-minutes: 330
     steps:
       - uses: actions/checkout@v4
+
+      - name: Skip after successful bootstrap
+        id: guard
+        shell: bash
+        run: |
+          if [ -f .bootstrap_done ]; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
       - uses: actions/setup-python@v5
+        if: steps.guard.outputs.skip != 'true'
         with:
           python-version: '3.12'
-      - run: pip install pandas requests urllib3
-      - run: python scripts/bootstrap_history.py
+
+      - name: Install dependencies
+        if: steps.guard.outputs.skip != 'true'
+        run: pip install pandas requests urllib3
+
+      - name: Bootstrap history
+        if: steps.guard.outputs.skip != 'true'
+        run: python scripts/bootstrap_history.py
+
       - uses: actions/upload-artifact@v4
-        if: always()
+        if: always() && steps.guard.outputs.skip != 'true'
         with:
           name: tsetmc-full-history
           path: data/history/
           retention-days: 90
+
       - name: Mark bootstrap complete
-        if: success()
+        if: success() && steps.guard.outputs.skip != 'true'
         run: |
           touch .bootstrap_done
           git config user.name "github-actions[bot]"
